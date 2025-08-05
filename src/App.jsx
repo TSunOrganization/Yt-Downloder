@@ -15,9 +15,15 @@ function App() {
     setError(null);
     setDownloadData(null);
 
-    fetch(`https://${server}-api.vercel.app/download?url=${url}`)
+    // UPDATED: Fetch from the internal proxy API route
+    fetch(`/api/download?url=${encodeURIComponent(url)}&server=${server}`)
       .then((res) => {
-        if (!res.ok) throw new Error('Network response was not ok.');
+        if (!res.ok) {
+          // Try to get a more specific error message from the proxy
+          return res.json().then(errData => {
+            throw new Error(errData.error?.err || `Server error: ${res.status}`);
+          });
+        }
         return res.json();
       })
       .then((data) => {
@@ -29,13 +35,14 @@ function App() {
       })
       .catch((err) => {
         console.error(err);
-        setError('An error occurred. The server may be down or the URL is invalid.');
+        setError(err.message || 'An error occurred. The server may be down or the URL is invalid.');
       })
       .finally(() => {
         setIsLoading(false);
       });
   };
 
+  // The rest of your App.jsx component remains the same...
   return (
     <div className="min-h-screen flex flex-col items-center justify-between p-4 relative overflow-hidden">
       {/* Background Orbs */}
